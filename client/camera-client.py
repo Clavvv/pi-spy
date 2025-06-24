@@ -1,9 +1,25 @@
 import asyncio
 import json
 import websockets
+import os
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaPlayer
 
+CONFIG_PATH = './device-config.json'
+def load_config():
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH) as config:
+            data = json.load(config)
+            return data.get('deviceID')
+    return None
+
+def save_device_id(device_id:str):
+    with open(CONFIG_PATH, 'w') as config:
+        json.dump({'deviceID': device_id}, config)
+    return
+
+
+    
 
 class CameraClient:
     def __init__(self, ws_url):
@@ -100,7 +116,17 @@ class CameraClient:
 
     async def connect(self):
         self.websocket = await websockets.connect(self.ws_url)
-        await self.listen()
+        device_id = load_config()
+        if device_id:
+            await self.websocket.send(json.dumps({
+                'type': 'register',
+                'id': device_id
+            }))
+            await self.listen()
+        
+        else:
+            print('Device is not yet registerred')
+            return
 
 
 
@@ -109,4 +135,7 @@ async def main():
     await client.connect()
 
 if __name__ == '__main__':
+    device_id = load_config()
+    if not device_id:
+        print('device not reigsterred')
     asyncio.run(main())
