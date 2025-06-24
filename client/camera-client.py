@@ -37,10 +37,12 @@ class CameraClient:
             return
         
         self.pc = RTCPeerConnection()
+        self.media = MediaPlayer("/dev/video0", format="v412", options={ 'video_size': '640x480' })
+
         @self.pc.on('icecandidate')
         async def on_icecandidate(event):
             if event.candidate:
-                await self.websocket.send(json.dump({
+                await self.websocket.send(json.dumps({
                     'command': 'ice',
                     'body': {
                         'candidate': event.candidate.to_sdp(),
@@ -53,7 +55,7 @@ class CameraClient:
         async def on_connectionstatechange():
             print(f'connection state: {self.pc.connectionState}')
 
-            if self.pc_connectionState == 'failed':
+            if self.pc.connectionState == 'failed':
                 await self.stop_webrtc()
                 print('WebRTC connection failed to establish')
 
