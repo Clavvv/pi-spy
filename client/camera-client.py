@@ -29,6 +29,7 @@ class CameraClient:
         self.media = None
 
     async def listen(self):
+        print('listening for socket messages')
         try:
             async for message in self.websocket:
                 data = json.loads(message)
