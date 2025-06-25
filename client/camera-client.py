@@ -129,6 +129,7 @@ class CameraClient:
                 'type': 'register',
                 'id': device_id
             }))
+            print(f'websocket open? {self.websocket.open}')
             await self.listen()
         
         else:
