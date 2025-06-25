@@ -1,6 +1,7 @@
 import asyncio
 import json
 import websockets
+from websockets.protocol import State
 import os
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaPlayer
@@ -129,7 +130,7 @@ class CameraClient:
                 'type': 'register',
                 'id': device_id
             }))
-            print(f'websocket open? {self.websocket.open}')
+            print(f'websocket is pen: {self.websocket.state == State.OPEN}')
             await self.listen()
         
         else:
