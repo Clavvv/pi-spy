@@ -29,23 +29,24 @@ class CameraClient:
         self.media = None
 
     async def listen(self):
-        async for message in self.websocket:
-            data = json.loads(message)
-            command = data.get('command')
-            body = data.get('body')
+        try:
+            async for message in self.websocket:
+                data = json.loads(message)
+                command = data.get('command')
+                body = data.get('body')
+                if command == 'activate':
+                    await self.start_webrtc()
 
-            print(f'Received Message: {data}')
-            if command == 'activate':
-                await self.start_webrtc()
+                elif command == 'answer':
+                    await self.handle_answer(body)
 
-            elif command == 'answer':
-                await self.handle_answer(body)
+                elif command == 'ice':
+                    await self.handle_remote_ice(body)
 
-            elif command == 'ice':
-                await self.handle_remote_ice(body)
-
-            elif command == 'deactivate':
-                await self.stop_webrtc()
+                elif command == 'deactivate':
+                    await self.stop_webrtc()
+        except Exception as e:
+            print(f'Websocket error {e}')
 
     async def start_webrtc(self):
 
