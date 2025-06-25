@@ -31,7 +31,9 @@ class CameraClient:
     async def listen(self):
         print('listening for socket messages')
         try:
-            async for message in self.websocket:
+            while True:
+                message = await self.websocket.recv()
+                print(f'Received Message: {message}')
                 data = json.loads(message)
                 command = data.get('command')
                 body = data.get('body')
