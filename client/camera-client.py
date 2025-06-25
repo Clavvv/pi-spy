@@ -34,6 +34,7 @@ class CameraClient:
             command = data.get('command')
             body = data.get('body')
 
+            print(f'Received Message: {data}')
             if command == 'activate':
                 await self.start_webrtc()
 
@@ -54,6 +55,7 @@ class CameraClient:
         
         self.pc = RTCPeerConnection()
         self.media = MediaPlayer("/dev/video0", format="v412", options={ 'video_size': '640x480' })
+        print('initiated camera feed')
 
         @self.pc.on('icecandidate')
         async def on_icecandidate(event):
@@ -76,6 +78,7 @@ class CameraClient:
                 print('WebRTC connection failed to establish')
 
         offer = await self.pc.createOffer()
+        print('offer created')
         await self.pc.setLocalDescription(offer)
         # await answer
         await self.websocket.send(json.dumps({
