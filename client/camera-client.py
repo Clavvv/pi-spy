@@ -89,7 +89,7 @@ class CameraClient:
         await self.pc.setLocalDescription(offer)
         # await answer
         await self.websocket.send(json.dumps({
-            'command': 'offer',
+            'type': 'offer',
             'body': {
                 'type': self.pc.localDescription.type,
                 'sdp': self.pc.localDescription.sdp
