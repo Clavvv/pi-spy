@@ -5,7 +5,43 @@ from websockets.protocol import State
 import os
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaPlayer
+from typing import TypedDict, Literal, NotRequired, Union
+from typing_extensions import NotRequired
 
+
+
+# -- Message Typing Definitions --
+class BaseMessage(TypedDict):
+    type: str
+    sender: str
+    target: NotRequired[str]
+    timestamp: NotRequired[int]
+
+class OfferMessage(BaseMessage):
+    type: Literal['offer']
+    sdp: dict
+
+class AnswerMessage(BaseMessage):
+    type: Literal['answer']
+    sdp: dict
+
+class CandidateMessage(BaseMessage):
+    type: Literal['candidate']
+    candidate: dict
+
+class CommandMessage(BaseMessage):
+    type: Literal['command']
+    command: str
+    payload: NotRequired[dict]
+
+SignallingMessage = Union[
+    OfferMessage,
+    AnswerMessage,
+    CandidateMessage,
+    CommandMessage
+]
+
+# -- Config Helpers --
 CONFIG_PATH = './device-config.json'
 def load_config():
     if os.path.exists(CONFIG_PATH):
@@ -20,14 +56,35 @@ def save_device_id(device_id:str):
     return
 
 
-    
-
+# -- WebRTC Device Client ---
 class CameraClient:
-    def __init__(self, ws_url):
+    '''
+    Need to restructure the class to keep connect -> listen -> start -> offer -> answer -> candidates -> close
+    that should be the lifecycle so this should help readability
+    '''
+    def __init__(self, ws_url:str, device_id:str):
         self.ws_url = ws_url
         self.pc = None
         self.websocket = None
         self.media = None
+        self.target = None
+        self.device_id = device_id
+
+    async def connect(self):
+        self.websocket = await websockets.connect(self.ws_url)
+        if self.websocket.state == State.OPEN:
+            print('Websocket Connected')
+
+            register_message: CommandMessage = {
+                    'type': 'command',
+                    'sender': self.device_id,
+                    'command': 'register'
+            }
+            await self.websocket.send(json.dumps(register_message))
+            await self.listen()
+        
+        else:
+            print('Websocket Connection Failed')
 
     async def listen(self):
         print('listening for socket messages')
@@ -35,22 +92,26 @@ class CameraClient:
             while True:
                 message = await self.websocket.recv()
                 print(f'Received Message: {message}')
-                data = json.loads(message)
-                command = data.get('command')
-                body = data.get('body')
-                if command == 'activate':
-                    await self.start_webrtc()
+                data: SignallingMessage = json.loads(message)
 
-                elif command == 'answer':
-                    await self.handle_answer(body)
+                if data['type'] == 'command':
+                    command = data['command']
+                    
+                    if command == 'activate':
+                        self.target = data['sender']
+                        await self.start_webrtc()
+                    
+                    elif command == 'deactivate':
+                        await self.stop_webrtc()
 
-                elif command == 'ice':
-                    await self.handle_remote_ice(body)
+                elif data['type'] == 'answer':
+                    await self.handle_answer(data['sdp'])
+                
+                elif data['type'] == 'candidate':
+                    await self.handle_remote_ice(data['candidate'])
 
-                elif command == 'deactivate':
-                    await self.stop_webrtc()
         except Exception as e:
-            print(f'Websocket error {e}')
+            print('Invalid Malformed Websocket Message', e)
 
     async def start_webrtc(self):
 
@@ -63,47 +124,55 @@ class CameraClient:
                         'video_size': '640x480'
                     })
         print('initiated camera feed')
+        @self.pc.on('track')
+        def on_track(track):
+            print('Track received', track.kind)
 
         @self.pc.on('icecandidate')
         async def on_icecandidate(event):
-            if event.candidate:
-                await self.websocket.send(json.dumps({
+            if event.candidate and self.websocket and self.target:
+                candidate_message: CandidateMessage = {
+                    'type': 'command',
                     'command': 'ice',
-                    'body': {
+                    'target': self.target,
+                    'timestamp': int(asyncio.get_event_loop.time() * 1000),
+                    'candidate': {
                         'candidate': event.candidate.to_sdp(),
                         'sdpMid': event.candidate.sdpMid,
                         'sdpMLineIndex': event.candidate.sdpMLineIndex
                     }
-                }))
+                }
+                await self.websocket.send(json.dumps(candidate_message))
 
         @self.pc.on('connectionstatechange')
         async def on_connectionstatechange():
             print(f'connection state: {self.pc.connectionState}')
-
             if self.pc.connectionState == 'failed':
                 await self.stop_webrtc()
-                print('WebRTC connection failed to establish')
 
         offer = await self.pc.createOffer()
-        print('offer created')
         await self.pc.setLocalDescription(offer)
-        # await answer
-        await self.websocket.send(json.dumps({
-            'type': 'offer',
-            'body': {
+        offer_message: OfferMessage = {
+            'type': offer,
+            'sender': self.device_id,
+            'target': self.target,
+            'sdp': {
                 'type': self.pc.localDescription.type,
                 'sdp': self.pc.localDescription.sdp
             }
-        }))
+        }
+        # await answer
+        await self.websocket.send(json.dumps(offer_message))
         print('Offer sent')
 
-    async def handle_answer(self, body):
+    async def handle_answer(self, sdp):
         if not self.pc:
             print('No active peer connections exist to apply answer to...')
             return
-        
-        answer = RTCSessionDescription(sdp=body['sdp'], type=body['type'])
+
+        answer = RTCSessionDescription(sdp=sdp['sdp'], type=sdp['type'])
         await self.pc.setRemoteDescription(answer)
+        print('Answer applied')
 
     async def handle_remote_ice(self, body):
         if not self.pc:
@@ -124,29 +193,17 @@ class CameraClient:
             self.pc = None
             print('WebRTC connection closed')
 
-    async def connect(self):
-        self.websocket = await websockets.connect(self.ws_url)
-        device_id = load_config()
-        if device_id:
-            await self.websocket.send(json.dumps({
-                'type': 'register',
-                'id': device_id
-            }))
-            print(f'websocket is pen: {self.websocket.state == State.OPEN}')
-            await self.listen()
-        
-        else:
-            print('Device is not yet registerred')
-            return
 
-
-
+# -- execute stuff --
 async def main():
-    client = CameraClient('ws://192.168.1.162:5151')
-    await client.connect()
 
-if __name__ == '__main__':
     device_id = load_config()
     if not device_id:
         print('device not reigsterred')
+        return
+
+    client = CameraClient('ws://192.168.1.162:5151', device_id)
+    await client.connect()
+
+if __name__ == '__main__':
     asyncio.run(main())
