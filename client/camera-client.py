@@ -8,8 +8,6 @@ from aiortc.contrib.media import MediaPlayer
 from typing import TypedDict, Literal, NotRequired, Union
 from typing_extensions import NotRequired
 
-
-
 # -- Message Typing Definitions --
 class BaseMessage(TypedDict):
     type: str
