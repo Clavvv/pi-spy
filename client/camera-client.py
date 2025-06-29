@@ -119,10 +119,7 @@ class CameraClient:
             return
         
         self.pc = RTCPeerConnection()
-        self.media = MediaPlayer('/dev/video0', format='v4l2', options={
-                        'video_size': '640x480',
-                        'pixel_format': 'yuyv422'
-                    })
+        self.media = MediaPlayer('/dev/video0', format='v4l2')
         print('initiated camera feed')
         self.pc.addTrack(self.media.video)
         @self.pc.on('track')
