@@ -1,15 +1,16 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+'use client'
+import DeviceList from '@/app/components/DeviceList';
 
 const Dashboard = () => {
     return (
         <div className='flex flex-grow flex-col text-black bg-neutral-900 min-h-screen w-full'>
             <div className='flex flex-col w-full h-30 justify-center text-white'>
-                <h1>Cameras</h1>
+                <h1>Your Devices</h1>
                 <div className='flex flex-row'>
                     {/*
                         Component must have a button for opening live feed from the camera
                     */}
-                    Logic for getting camera cards per user
+                    <DeviceList />
                 </div>
             </div>
             <div className='flex flex-col w-full h-30 justify-center text-white'>

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "device-001",
+    "name": "Front Door Camera"
+  },
+  {
+    "id": "device-002",
+    "name": "Backyard Camera"
+  },
+  {
+    "id": "device-003",
+    "name": "Garage Camera"
+  },
+  {
+    "id": "device-004",
+    "name": "Living Room Camera"
+  },
+  {
+    "id": "device-005",
+    "name": "Kitchen Camera"
+  },
+  {
+    "id": "device-006",
+    "name": "Driveway Camera"
+  }
+]
