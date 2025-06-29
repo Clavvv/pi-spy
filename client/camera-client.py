@@ -128,12 +128,13 @@ class CameraClient:
 
         @self.pc.on('icecandidate')
         async def on_icecandidate(event):
+            print(f'generated ICE Candidate: {event.candidate}')
             if event.candidate and self.websocket and self.target:
                 candidate_message: CandidateMessage = {
-                    'type': 'command',
-                    'command': 'ice',
+                    'type': 'candidate',
                     'target': self.target,
-                    'timestamp': int(asyncio.get_event_loop.time() * 1000),
+                    'sender': self.device_id,
+                    'timestamp': int(asyncio.get_event_loop().time() * 1000),
                     'candidate': {
                         'candidate': event.candidate.to_sdp(),
                         'sdpMid': event.candidate.sdpMid,
