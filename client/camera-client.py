@@ -8,6 +8,7 @@ from aiortc.contrib.media import MediaPlayer
 from aiortc.sdp import candidate_from_sdp
 from typing import TypedDict, Literal, NotRequired, Union
 from typing_extensions import NotRequired
+# -- Custom Video Track --
 
 # -- Message Typing Definitions --
 class BaseMessage(TypedDict):
@@ -119,7 +120,7 @@ class CameraClient:
             return
         
         self.pc = RTCPeerConnection()
-        self.media = MediaPlayer('/dev/video0', format='v4l2')
+        self.media = MediaPlayer('/dev/video0', format='v4l2').video
         print('initiated camera feed')
         self.pc.addTrack(self.media.video)
         @self.pc.on('track')

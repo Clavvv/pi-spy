@@ -1,2 +1,4 @@
 asyncio
 aiortc
+numpy
+picamera2
