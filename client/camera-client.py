@@ -181,9 +181,14 @@ class CameraClient:
             print('No active RTCPerrConnection to apply ice candidates to...')
             return
         print(f'\n\nReceived Ice Candidate: {body}\n\n')
+        candidate_str = body.get('candidate')
+        if not candidate_str:
+            print('Empty candidate (end of candidate signal)\nignoring')
+            return
         candidate = candidate_from_sdp(body['candidate'])
         candidate.sdpMid = body.get('sdpMid')
         candidate.sdpMLineIndex = body.get('sdpMidLineIndex')
+        
         await self.pc.addIceCandidate(candidate)
         print("Remote ice candidate added")
 
