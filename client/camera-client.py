@@ -179,7 +179,7 @@ class CameraClient:
         if not self.pc:
             print('No active RTCPerrConnection to apply ice candidates to...')
             return
-        print(f'Received Ice Candidate: {body}')
+        print(f'\n\nReceived Ice Candidate: {body}\n\n')
         candidate = RTCIceCandidate(
             candidate=body['candidate'],
             sdpMid=body['sdpMid'],
