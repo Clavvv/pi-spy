@@ -5,6 +5,7 @@ from websockets.protocol import State
 import os
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaPlayer
+from aiortc.sdp import candidate_from_sdp
 from typing import TypedDict, Literal, NotRequired, Union
 from typing_extensions import NotRequired
 
@@ -180,11 +181,9 @@ class CameraClient:
             print('No active RTCPerrConnection to apply ice candidates to...')
             return
         print(f'\n\nReceived Ice Candidate: {body}\n\n')
-        candidate = RTCIceCandidate(
-            body['sdpMid'],
-            body['sdpMLineIndex'],
-            body['candidate'],
-        )
+        candidate = candidate_from_sdp(body['candidate'])
+        candidate.sdpMid = body.get('sdpMid')
+        candidate.sdpMLineIndex = body.get('sdpMidLineIndex')
         await self.pc.addIceCandidate(candidate)
         print("Remote ice candidate added")
 
