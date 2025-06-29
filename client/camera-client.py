@@ -181,9 +181,9 @@ class CameraClient:
             return
         print(f'\n\nReceived Ice Candidate: {body}\n\n')
         candidate = RTCIceCandidate(
-            candidate=body['candidate'],
-            sdpMid=body['sdpMid'],
-            sdpMLineIndex=body['sdpMLineIndex']
+            body['sdpMid'],
+            body['sdpMLineIndex'],
+            body['candidate'],
         )
         await self.pc.addIceCandidate(candidate)
         print("Remote ice candidate added")
