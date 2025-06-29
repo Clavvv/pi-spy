@@ -119,8 +119,9 @@ class CameraClient:
             return
         
         self.pc = RTCPeerConnection()
-        self.media = MediaPlayer('/dev/video0', format='V4l2', options={
-                        'video_size': '640x480'
+        self.media = MediaPlayer('/dev/video0', format='v4l2', options={
+                        'video_size': '640x480',
+                        'pixel_format': 'yuyv422'
                     })
         print('initiated camera feed')
         self.pc.addTrack(self.media.video)
@@ -188,7 +189,7 @@ class CameraClient:
         candidate = candidate_from_sdp(body['candidate'])
         candidate.sdpMid = body.get('sdpMid')
         candidate.sdpMLineIndex = body.get('sdpMidLineIndex')
-        
+
         await self.pc.addIceCandidate(candidate)
         print("Remote ice candidate added")
 
