@@ -3,11 +3,33 @@ import json
 import websockets
 from websockets.protocol import State
 import os
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, VideoStreamTrack
+from av import VideoFrame
 from aiortc.contrib.media import MediaPlayer
 from aiortc.sdp import candidate_from_sdp
 from typing import TypedDict, Literal, NotRequired, Union
 from typing_extensions import NotRequired
+from picamera2 import Picamera2
+
+# -- Custom Video Track --
+class PicameraStreamTrack(VideoStreamTrack):
+    def __init__(self):
+        super().__init__()
+        self.picam2 = Picamera2()
+        video_config = self.picam2.create_video_configuration({"format": "YUV420"})
+        self.picam2.configure(video_config)
+        self.picam2.start()
+
+    async def recv(self):
+        frame_array = self.picam2.capture_array("main")
+        frame = VideoFrame.from_ndarray(frame_array, format="yuv420p")
+        pts, time_base = await self.next_timestamp()
+        frame.pts = pts
+        frame.time_base = time_base
+        return frame
+    
+    def stop_camera(self):
+        self.picam2.stop()
 
 # -- Message Typing Definitions --
 class BaseMessage(TypedDict):
@@ -119,9 +141,11 @@ class CameraClient:
             return
         
         self.pc = RTCPeerConnection()
-        self.media = MediaPlayer('/dev/video0', format='v4l2')
+        track = PicameraStreamTrack()
+        self.pc.addTrack(track)
+        #self.media = MediaPlayer('/dev/video0', format='v4l2')
         print('initiated camera feed')
-        self.pc.addTrack(self.media.video)
+        #self.pc.addTrack(self.media.video)
         @self.pc.on('track')
         def on_track(track):
             print('Track received', track.kind)
