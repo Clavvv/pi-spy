@@ -122,7 +122,7 @@ class CameraClient:
                         'video_size': '640x480'
                     })
         print('initiated camera feed')
-        self.pc.addTrack(self.media)
+        self.pc.addTrack(self.media.video)
         @self.pc.on('track')
         def on_track(track):
             print('Track received', track.kind)
