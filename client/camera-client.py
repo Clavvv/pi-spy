@@ -13,9 +13,9 @@ from picamera2 import Picamera2
 
 # -- Custom Video Track --
 class PicameraStreamTrack(VideoStreamTrack):
-    def __init__(self, picam2):
+    def __init__(self):
         super().__init__()
-        self.picam2 = Picamera2
+        self.picam2 = Picamera2()
         video_config = self.picam2.create_video_configuration({"format": "YUV420"})
         self.picam2.configure(video_config)
         self.picam2.start()
