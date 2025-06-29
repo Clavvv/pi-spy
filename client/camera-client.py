@@ -149,9 +149,10 @@ class CameraClient:
                 await self.stop_webrtc()
 
         offer = await self.pc.createOffer()
+        print(offer)
         await self.pc.setLocalDescription(offer)
         offer_message: OfferMessage = {
-            'type': offer,
+            'type': 'offer',
             'sender': self.device_id,
             'target': self.target,
             'sdp': {
