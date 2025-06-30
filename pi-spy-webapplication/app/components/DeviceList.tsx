@@ -118,8 +118,7 @@ const DeviceList: React.FC = () => {
 
 
     return (
-        <div className='flex flex-row h-full w-full bg-neutral-100 justify-start px-5 space-x-5'>
-            {newDevice}
+        <div className='grid grid-cols-3 h-full w-full bg-neutral-200 justify-center px-5 space-x-5'>
             {devices.map(device => (
                 <DeviceCard key={device.id} device={device} onConnect={onConnect} />
             ))}
